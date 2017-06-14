@@ -1,0 +1,83 @@
+function genHTMLpdf() {
+            var answers = getAnswers();
+            var doc = new jsPDF();
+            var fileName = "handlingsplan.pdf";
+            var x = 15;
+            var y = 15;
+            var lines = 0;
+            var maxLines = 25;
+            var pageHeight = doc.internal.pageSize.height;
+            var valueLineCount = 0;
+            $.each(answers, function (i, group) {
+                //check the rest of the page can place the readly to add or not.if not,addPage.
+                if (pageHeight - y - 15 < (valueLineCount + 1) * 10) {
+                    lines = 0;
+                    doc.addPage();
+                    y = 15;
+                }
+                //add topic
+                doc.setFontType('bold').setFontSize(16).text(x, y, group.title);
+                y += 10;
+                lines++;
+                $.each(group.questions, function (i, answer) {
+                    //deal with question title
+                    var title = answer.title;
+                    if (i == 0) {
+                        title = "Aktivitet & reflektion";
+                    } else if (i == 3) {
+                        title = "Tidsplan";
+                    }
+                    //check the rest of the page can place the readly to add or not.if not,addPage.
+                    if (pageHeight - y - 15 < (valueLineCount + 1) * 8) {
+                        lines = 0;
+                        doc.addPage();
+                        y = 15;
+                    }
+                    //add question title
+                    doc.setFontType('bold').setFontSize(13).text(x, y, title);
+                    y += 10;
+                    lines++;
+                    //deal with question answer
+                    var value = answer.value;
+                    var aValue = "";
+                    if (value.constructor == Array) {
+                        var br = "";
+                        $.each(value, function (vi, v) {
+                            aValue += br + v;
+                            br = ", ";
+                        });
+                        valueLineCount = 0;
+                    } else if (answer.isText) {
+                        aValue = value;
+                        newLine = value.match(/\r\n|\r|\n/ig);
+                        valueLineCount = newLine ? newLine.length : 0;
+                    } else {
+                        value = value.replace(/[ ]{2,}/ig, ""); //match two and more whitespace and replace
+                        aValue = value.replace(/\r\n|\r|\n/ig, " ");
+                        valueLineCount = 0;
+                    }
+                    //check the rest of the page can place the readly to add or not.if not,addPage.
+                    if (pageHeight - y - 15 < (valueLineCount + 1) * 5) {
+                        lines = 0;
+                        doc.addPage();
+                        y = 15;
+                    }
+                    //add question answer
+                    if (aValue) {
+                        doc.setFontType('normal').setFontSize(12).text(x, y, aValue);
+                        lines += Math.ceil((valueLineCount + 1) / 2);
+                        y += 10 + valueLineCount * 5;
+                    }
+
+                    //if the text lines exceed maxLines,addPage.
+                    //if (lines >= maxLines) {
+                    //    lines = 0;
+                    //    doc.addPage();
+                    //    y = 15;
+                    //} else {
+                    //    y += 10 + valueLineCount * 5;
+                    //}
+                });
+            });
+            doc.save(fileName);
+        }
